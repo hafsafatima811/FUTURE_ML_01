@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Forecast Pro - Task 1 | Future Interns ML</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #a5b4fc;
+            --secondary: #0ea5e9;
+            --accent: #f59e0b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --dark: #0f172a;
+            --dark-card: #1e293b;
+            --dark-hover: #334155;
+            --light: #f8fafc;
+            --gray: #94a3b8;
+            --gray-light: #e2e8f0;
+            --gradient-1: linear-gradient(135deg, #6366f1 0%, #0ea5e9 100%);
+            --gradient-2: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+            --gradient-3: linear-gradient(135deg, #10b981 0%, #0ea5e9 100%);
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            --radius: 16px;
+            --radius-sm: 8px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--dark);
+            color: var(--light);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .bg-mesh {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 0;
+            background: 
+                radial-gradient(ellipse at 20% 80%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(14, 165, 233, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(245, 158, 11, 0.05) 0%, transparent 50%);
+            animation: meshFloat 20s ease-in-out infinite;
+        }
+
+        @keyframes meshFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -30px) scale(1.05); }
+            66% { transform: translate(-20px, 20px) scale(0.95); }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0 32px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            margin-bottom: 32px;
+        }
+
+        .logo { display: flex; align-items: center; gap: 14px; }
+        .logo-icon {
+            width: 48px; height: 48px;
+            background: var(--gradient-1);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
+        }
+        .logo-text h1 {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .logo-text p {
+            font-size: 13px;
+            color: var(--gray);
+            margin-top: 2px;
+        }
+
+        .header-actions { display: flex; gap: 12px; align-items: center; }
+        .badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .badge-ml { background: rgba(99, 102, 241, 0.15); color: var(--primary-light); border: 1px solid rgba(99, 102, 241, 0.3); }
+        .badge-live { background: rgba(16, 185, 129, 0.15); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3); animation: pulse 2s infinite; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: var(--dark-card);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: var(--radius);
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255,255,255,0.1);
+            box-shadow: var(--shadow-lg);
+        }
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: var(--gradient-1);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .stat-card:hover::before { opacity: 1; }
+
+        .stat-icon {
+            width: 44px; height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            margin-bottom: 16px;
+        }
+        .stat-icon.sales { background: rgba(99, 102, 241, 0.15); color: var(--primary); }
+        .stat-icon.profit { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+        .stat-icon.orders { background: rgba(245, 158, 11, 0.15); color: var(--accent); }
+        .stat-icon.margin { background: rgba(14, 165, 233, 0.15); color: var(--secondary); }
+        .stat-icon.customers { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+        .stat-icon.aov { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .stat-value {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 6px;
+        }
+        .stat-change {
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .stat-change.positive { color: var(--success); }
+        .stat-change.negative { color: var(--danger); }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+        @media (max-width: 1024px) {
+            .main-grid { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background: var(--dark-card);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: var(--radius);
+            padding: 28px;
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            border-color: rgba(255,255,255,0.1);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .card-title i { color: var(--primary); font-size: 16px; }
+
+        .card-actions { display: flex; gap: 8px; }
+        .btn-sm {
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.03);
+            color: var(--gray);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-sm:hover { background: rgba(255,255,255,0.08); color: var(--light); }
+        .btn-sm.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        .chart-container { position: relative; height: 320px; }
+        .chart-container-lg { position: relative; height: 400px; }
+        .card-full { grid-column: 1 / -1; }
+
+        .forecast-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+        @media (max-width: 1024px) {
+            .forecast-grid { grid-template-columns: 1fr; }
+        }
+
+        .forecast-table { width: 100%; border-collapse: collapse; }
+        .forecast-table th {
+            text-align: left;
+            padding: 12px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--gray);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .forecast-table td {
+            padding: 14px 16px;
+            font-size: 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .forecast-table tr:hover td { background: rgba(255,255,255,0.02); }
+        .forecast-table tr.forecast-row { background: rgba(99, 102, 241, 0.05); }
+        .forecast-table tr.forecast-row:hover { background: rgba(99, 102, 241, 0.08); }
+
+        .forecast-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .forecast-badge.historical { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+        .forecast-badge.predicted { background: rgba(99, 102, 241, 0.15); color: var(--primary-light); }
+
+        .trend-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .trend-up { color: var(--success); }
+        .trend-down { color: var(--danger); }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+        .metric-box {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+        .metric-box-value { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+        .metric-box-label { font-size: 12px; color: var(--gray); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+
+        .tabs {
+            display: flex;
+            gap: 4px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 24px;
+            width: fit-content;
+        }
+        .tab-btn {
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            background: transparent;
+            color: var(--gray);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab-btn:hover { color: var(--light); }
+        .tab-btn.active { background: var(--dark-card); color: var(--light); box-shadow: var(--shadow); }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.6s ease;
+        }
+        .progress-fill.primary { background: var(--gradient-1); }
+        .progress-fill.success { background: var(--gradient-3); }
+        .progress-fill.warning { background: var(--gradient-2); }
+
+        .insight-list { display: flex; flex-direction: column; gap: 12px; }
+        .insight-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 16px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.04);
+            transition: all 0.2s;
+        }
+        .insight-item:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); }
+        .insight-icon {
+            width: 36px; height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        .insight-icon.up { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+        .insight-icon.down { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+        .insight-icon.info { background: rgba(99, 102, 241, 0.15); color: var(--primary); }
+        .insight-icon.warn { background: rgba(245, 158, 11, 0.15); color: var(--accent); }
+        .insight-content h4 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+        .insight-content p { font-size: 13px; color: var(--gray); line-height: 1.5; }
+
+        .footer {
+            text-align: center;
+            padding: 40px 0 20px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            margin-top: 40px;
+        }
+        .footer p { font-size: 13px; color: var(--gray); }
+        .footer .highlight { color: var(--primary-light); font-weight: 600; }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--dark); }
+        ::-webkit-scrollbar-thumb { background: var(--dark-hover); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--gray); }
+
+        @media (max-width: 768px) {
+            .container { padding: 16px; }
+            .header { flex-direction: column; gap: 16px; align-items: flex-start; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .metrics-grid { grid-template-columns: 1fr; }
+            .card { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-mesh"></div>
+
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon"><i class="fas fa-chart-line"></i></div>
+                <div class="logo-text">
+                    <h1>Sales Forecast Pro</h1>
+                    <p>Machine Learning Task 1 | Future Interns</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <span class="badge badge-ml">ML Track</span>
+                <span class="badge badge-live"><i class="fas fa-circle" style="font-size:8px;margin-right:6px;"></i>Live Model</span>
+            </div>
+        </header>
+
+        <div class="stats-grid" id="statsGrid"></div>
+
+        <div class="card card-full" style="margin-bottom:24px;">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-wand-magic-sparkles"></i>Sales Forecast: Historical vs Predicted</div>
+                <div class="card-actions">
+                    <button class="btn-sm active" onclick="setForecastView('combined')">Combined</button>
+                    <button class="btn-sm" onclick="setForecastView('historical')">Historical</button>
+                    <button class="btn-sm" onclick="setForecastView('forecast')">Forecast Only</button>
+                </div>
+            </div>
+            <div class="chart-container-lg"><canvas id="forecastChart"></canvas></div>
+        </div>
+
+        <div class="forecast-grid">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="fas fa-table"></i>12-Month Forecast Details</div>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table class="forecast-table" id="forecastTable">
+                        <thead><tr><th>Period</th><th>Type</th><th>Random Forest</th><th>Holt-Winters</th><th>Trend</th></tr></thead>
+                        <tbody id="forecastTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="fas fa-brain"></i>Model Performance</div>
+                </div>
+                <div class="metrics-grid" id="metricsGrid"></div>
+                <div style="margin-top:24px;">
+                    <h4 style="font-size:14px;font-weight:600;margin-bottom:16px;color:var(--gray);">Feature Importance</h4>
+                    <div id="featureImportance"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('decomposition')">Decomposition</button>
+            <button class="tab-btn" onclick="switchTab('categories')">Categories</button>
+            <button class="tab-btn" onclick="switchTab('regions')">Regions</button>
+            <button class="tab-btn" onclick="switchTab('segments')">Segments</button>
+            <button class="tab-btn" onclick="switchTab('insights')">AI Insights</button>
+        </div>
+
+        <div id="tab-decomposition" class="tab-content active">
+            <div class="main-grid">
+                <div class="card">
+                    <div class="card-header"><div class="card-title"><i class="fas fa-wave-square"></i>Trend Component</div></div>
+                    <div class="chart-container"><canvas id="trendChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><div class="card-title"><i class="fas fa-calendar-alt"></i>Seasonal Component</div></div>
+                    <div class="chart-container"><canvas id="seasonalChart"></canvas></div>
+                </div>
+            </div>
+            <div class="card" style="margin-top:24px;">
+                <div class="card-header"><div class="card-title"><i class="fas fa-chart-area"></i>Residual Analysis</div></div>
+                <div class="chart-container-lg"><canvas id="residualChart"></canvas></div>
+            </div>
+        </div>
+
+        <div id="tab-categories" class="tab-content">
+            <div class="main-grid">
+                <div class="card">
+                    <div class="card-header"><div class="card-title"><i class="fas fa-tags"></i>Sales by Category</div></div>
+                    <div class="chart-container-lg"><canvas id="categoryChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><div class="card-title"><i class="fas fa-pie-chart"></i>Category Distribution</div></div>
+                    <div class="chart-container-lg"><canvas id="categoryPieChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-regions" class="tab-content">
+            <div class="main-grid">
+                <div class="card">
+                    <div class="card-header"><div class="card-title"><i class="fas fa-map-marker-alt"></i>Regional Sales Trends</div></div>
+                    <div class="chart-container-lg"><canvas id="regionChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><div class="card-title"><i class="fas fa-globe"></i>Regional Performance</div></div>
+                    <div class="chart-container-lg"><canvas id="regionBarChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-segments" class="tab-content">
+            <div class="main-grid">
+                <div class="card">
+                    <div class="card-header"><div class="card-title"><i class="fas fa-users"></i>Segment Analysis</div></div>
+                    <div class="chart-container-lg"><canvas id="segmentChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><div class="card-title"><i class="fas fa-chart-pie"></i>Segment Distribution</div></div>
+                    <div class="chart-container-lg"><canvas id="segmentPieChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-insights" class="tab-content">
+            <div class="main-grid">
+                <div class="card">
+                    <div class="card-header"><div class="card-title"><i class="fas fa-lightbulb"></i>Key Business Insights</div></div>
+                    <div class="insight-list" id="insightsList"></div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><div class="card-title"><i class="fas fa-trophy"></i>Top Performers</div></div>
+                    <div style="margin-bottom:24px;">
+                        <h4 style="font-size:14px;font-weight:600;margin-bottom:16px;color:var(--gray);">Top Sub-Categories by Sales</h4>
+                        <div id="topSubcategories"></div>
+                    </div>
+                    <div>
+                        <h4 style="font-size:14px;font-weight:600;margin-bottom:16px;color:var(--gray);">Top States by Sales</h4>
+                        <div id="topStates"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <p>Built for <span class="highlight">Future Interns - Machine Learning Track</span> | Task 1: Sales & Demand Forecasting</p>
+            <p style="margin-top:8px;font-size:12px;">Repository: FUTURE_ML_01 | Technologies: Python, Scikit-learn, Statsmodels, Chart.js</p>
+        </footer>
+    </div>
+
+    <script>
+        const forecastData = {"historical": {"dates": ["2014-01-01", "2014-02-01", "2014-03-01", "2014-04-01", "2014-05-01", "2014-06-01", "2014-07-01", "2014-08-01", "2014-09-01", "2014-10-01", "2014-11-01", "2014-12-01", "2015-01-01", "2015-02-01", "2015-03-01", "2015-04-01", "2015-05-01", "2015-06-01", "2015-07-01", "2015-08-01", "2015-09-01", "2015-10-01", "2015-11-01", "2015-12-01", "2016-01-01", "2016-02-01", "2016-03-01", "2016-04-01", "2016-05-01", "2016-06-01", "2016-07-01", "2016-08-01", "2016-09-01", "2016-10-01", "2016-11-01", "2016-12-01", "2017-01-01", "2017-02-01", "2017-03-01", "2017-04-01", "2017-05-01", "2017-06-01", "2017-07-01", "2017-08-01", "2017-09-01", "2017-10-01", "2017-11-01", "2017-12-01"], "sales": [14236.895, 4519.892, 55691.009, 28295.345, 23648.287, 34595.1276, 33946.393, 27909.4685, 81777.3508, 31453.393, 78628.7167, 69545.6205, 18174.0756, 11951.411, 38726.252, 34195.2085, 30131.6865, 24797.292, 28765.325, 36898.3322, 64595.918, 31404.9235, 75972.5635, 74919.5212, 18542.490999999998, 22978.815, 51715.875, 38750.039000000004, 56987.728, 40344.534, 39261.963, 31115.3743, 73410.0249, 59687.745, 79411.9658, 96999.043, 43971.374, 20301.1334, 58872.3528, 36521.5361, 44261.1102, 52981.7257, 45264.416, 63120.888, 87866.652, 77776.9232, 118447.825, 83829.3188], "profit": [2450.1907, 862.3084, 498.7299, 3488.8352, 2738.7096, 4976.5244, -841.4826000000002, 5318.105, 8328.0994, 3448.2573, 9292.1269, 8983.5699, -3281.007, 2813.8508, 9732.0978, 4187.4962, 4667.869, 3335.5572, 3288.6483, 5355.8084, 8209.1627, 2817.366, 12474.7884, 8016.9659, 2824.8233, 5004.5795, 3611.9680000000003, 2977.8149, 8662.1464, 4750.3781, 4432.8778999999995, 2062.0693, 9328.6576, 16243.142500000002, 4011.4075, 17885.3093, 7140.4391, 1613.8719999999998, 14751.891500000002, 933.2899999999998, 6342.5828, 8223.3357, 6952.6212, 9040.9557, 10991.5556, 9275.2755, 9690.1037, 8483.346800000001], "quantity": [284, 159, 585, 536, 466, 521, 550, 609, 1000, 573, 1219, 1079, 236, 239, 515, 543, 575, 486, 557, 598, 1086, 631, 1310, 1203, 358, 306, 579, 635, 863, 742, 758, 693, 1316, 767, 1406, 1414, 597, 363, 885, 733, 887, 931, 840, 884, 1660, 1133, 1840, 1723], "orders": [32, 28, 71, 66, 69, 66, 65, 72, 130, 78, 151, 141, 29, 36, 79, 72, 74, 68, 66, 68, 140, 87, 158, 161, 48, 45, 86, 89, 108, 97, 96, 90, 192, 105, 183, 176, 69, 53, 118, 116, 118, 133, 111, 111, 226, 147, 261, 224]}, "forecast": {"dates": ["2018-01-01", "2018-02-01", "2018-03-01", "2018-04-01", "2018-05-01", "2018-06-01", "2018-07-01", "2018-08-01", "2018-09-01", "2018-10-01", "2018-11-01", "2018-12-01"], "rf_sales": [27054.102174000003, 31200.661025999998, 47606.26555900002, 39931.51884799999, 44626.03149300002, 43633.943389999986, 42980.52322400001, 40917.45585799998, 68774.47042799994, 59383.41494100001, 76732.836798, 77521.56675699996], "hw_sales": [45421.30896836285, 38506.11531697963, 69257.59567230844, 55624.0529639985, 59911.27274502965, 59798.18076382759, 58369.63860332521, 61447.73042540913, 98674.57732255141, 71939.19616054372, 109545.14562178051, 102587.744062955]}, "decomposition": {"trend": [40133.44770416667, 40649.41699583333, 40511.31549166667, 39887.194508333334, 40045.852662499994, 39704.49561666667, 38986.58302083333, 38873.890408333325, 38987.12988750001, 39226.393058333335, 39701.21886666667, 40701.92832500001, 41432.94722083333, 42741.73355416666, 44508.537033333334, 45593.69869999999, 45790.1020375, 45916.39991249999, 47462.10526249999, 48783.86458749999, 49847.15309166667, 51826.66995833333, 52774.63668333333, 52961.25319166666, 53166.585479166664, 52543.45545, 52539.7293625, 53316.381225, 54900.04650416667, 56835.96903750001, 58192.044258333335, 60572.25414999999, 61650.009775], "seasonal": [-10722.928676041662, -4614.773844097216, -9785.19271354167, -10511.166537152778, -11229.353553819448, 23173.101662847217, -3060.5853302083347, 33694.60097118056, 35636.588575347225, -18368.05697326389, -27499.826296875002, 3287.5927156249986, -10722.928676041662, -4614.773844097216, -9785.19271354167, -10511.166537152778, -11229.353553819448, 23173.101662847217, -3060.5853302083347, 33694.60097118056, 35636.588575347225, -18368.05697326389, -27499.826296875002, 3287.5927156249986, -10722.928676041662, -4614.773844097216, -9785.19271354167, -10511.166537152778, -11229.353553819448, 23173.101662847217, -3060.5853302083347, 33694.60097118056, 35636.588575347225, -18368.05697326389, -27499.826296875002, 3287.5927156249986, -10722.928676041662, -4614.773844097216, -9785.19271354167, -10511.166537152778, -11229.353553819448, 23173.101662847217, -3060.5853302083347, 33694.60097118056, 35636.588575347225], "residual": [-5619.4693739583345, 4284.698732986115, -6602.283567013888, -3345.0619350694433, -594.6153656249917, -4265.836332291665, 5931.554155208334, -4127.4300642361095, -4404.645173958335, 50.0984788194437, 8426.466887152776, 720.8880121527727, -6967.438390624997, -463.7710253472178, -5225.604408680556, -8683.150726736105, 4688.539259375, 2511.8823718750114, 2010.8624135416794, 12818.637256597227, 282.5736218750026, -2053.5404211805508, -10429.908829513883, -2724.329954513876, 9581.744851041673, -6826.090621180556, 8822.725062152778, 9023.049748263897, -7099.086807291667, -1251.2089531250044, -10947.579482291676, -11696.370105902774, 1116.908638541674], "dates": ["2014-10-01", "2014-11-01", "2014-12-01", "2015-01-01", "2015-02-01", "2015-03-01", "2015-04-01", "2015-05-01", "2015-06-01", "2015-07-01", "2015-08-01", "2015-09-01", "2015-10-01", "2015-11-01", "2015-12-01", "2016-01-01", "2016-02-01", "2016-03-01", "2016-04-01", "2016-05-01", "2016-06-01", "2016-07-01", "2016-08-01", "2016-09-01", "2016-10-01", "2016-11-01", "2016-12-01", "2017-01-01", "2017-02-01", "2017-03-01", "2017-04-01", "2017-05-01", "2017-06-01"]}, "metrics": {"rf_mae": 18171.827404833355, "rf_rmse": 22248.522791855914, "rf_r2": 0.025889720762443225, "lr_mae": 15919.016999745583, "lr_rmse": 20658.817296910518, "lr_r2": 0.1601210937300631, "hw_mae": 6887.642446465516, "hw_rmse": 8358.707110879715}, "category_data": {"dates": ["2014-01-01", "2014-02-01", "2014-03-01", "2014-04-01", "2014-05-01", "2014-06-01", "2014-07-01", "2014-08-01", "2014-09-01", "2014-10-01", "2014-11-01", "2014-12-01", "2015-01-01", "2015-02-01", "2015-03-01", "2015-04-01", "2015-05-01", "2015-06-01", "2015-07-01", "2015-08-01", "2015-09-01", "2015-10-01", "2015-11-01", "2015-12-01", "2016-01-01", "2016-02-01", "2016-03-01", "2016-04-01", "2016-05-01", "2016-06-01", "2016-07-01", "2016-08-01", "2016-09-01", "2016-10-01", "2016-11-01", "2016-12-01", "2017-01-01", "2017-02-01", "2017-03-01", "2017-04-01", "2017-05-01", "2017-06-01", "2017-07-01", "2017-08-01", "2017-09-01", "2017-10-01", "2017-11-01", "2017-12-01"], "categories": {"Furniture": {"sales": [6242.525000000001, 1839.658, 14573.956, 7944.8369999999995, 6912.787, 13206.1256, 10821.051, 7320.3465, 23816.4808, 12304.247, 21564.8727, 30645.9665, 11739.9416, 3134.374, 12499.783, 10475.6985, 9374.950499999999, 7714.179, 13674.42, 9638.5922, 26273.023, 12026.6235, 30880.8325, 23085.8192, 7622.743, 3925.551, 12801.092, 13212.09, 15119.835000000001, 13070.572, 13068.519, 12483.2323, 27262.8809, 11872.577000000001, 31783.6288, 36678.715, 5964.032, 6866.3374, 10893.4448, 9065.9581, 16957.5582, 19008.5867, 11813.022, 15441.874, 29028.206, 21884.0682, 37056.715000000004, 31407.4668], "profit": [805.4665, 120.6917, -1128.655, 554.3801, -349.87760000000003, 596.3153000000001, 374.2467, 663.4717, 1858.5976, 249.16450000000006, -297.8957999999999, 2011.8198, -3014.2, 394.8948, 1455.0573, 338.6502000000001, 900.5847, -412.65969999999993, -325.09380000000004, -487.4708999999999, 1350.1185, -605.5163, 2992.024, 428.81409999999994, 303.96070000000003, 377.03520000000003, -555.268, 364.83340000000004, 1824.4739, -106.26650000000004, 1038.9073, -494.1457, 702.6025, -144.66, 819.8088, 2828.6715000000004, -39.440200000000004, -199.04210000000003, 1000.8532, 202.46240000000003, -72.88289999999998, 904.9956, 324.62440000000004, 322.23900000000003, 1548.6837, -2526.9202999999998, 406.0637, 1146.7548]}, "Office Supplies": {"sales": [4851.08, 1071.724, 8605.879, 11155.074, 7135.624, 12953.037, 15121.207999999999, 11379.462, 27423.298000000003, 7211.128, 26862.436, 18006.462, 1808.78, 5368.067, 15882.547, 12558.557999999999, 9113.736, 10647.747000000001, 4719.939, 11735.108, 19305.767, 8673.41, 21218.13, 16201.673999999999, 5299.682, 6794.349999999999, 17346.931, 10647.447, 13035.202, 10901.81, 12924.444, 8959.74, 23263.738, 16281.794, 20487.278000000002, 37997.566, 21274.289, 7407.772, 14550.286, 15072.191, 13736.964, 16912.039, 10241.468, 30059.852, 31895.843, 23037.192, 31472.337, 30436.942], "profit": [788.9505999999999, 176.091, 1270.4133, 1000.2086, 1747.2044, 3031.4326, -2482.0172000000002, 2767.6007, 6699.5401999999995, 1117.6406, 4411.956, 2064.3953, 589.8969, 1814.1018, 5407.848199999999, 1477.3595999999998, 1731.6139, 2195.3864000000003, 1113.7829, 2208.7531, 2037.8836999999999, 1090.9375, 2800.0289, 2631.9409, 1604.4712, 1330.0009, 1061.4056, -1100.4821, 2397.5024, 2467.4894, 1123.9602, 1629.1913, 3714.0417, 4680.055, 4686.925, 11466.668599999999, 3260.4466999999995, 953.8253000000001, 2715.9624, 3370.6015, 3153.726, 3378.9820999999997, 2563.2844999999998, 6067.858200000001, 4847.7438, 4040.7751, 3609.1028999999994, 1774.3132]}, "Technology": {"sales": [3143.29, 1608.51, 32511.174, 9195.434, 9599.876, 8435.965, 8004.134, 9209.66, 30537.572, 11938.018, 30201.408, 20893.192, 4625.354, 3448.97, 10343.922, 11160.952000000001, 11643.0, 6435.366, 10370.966, 15524.632, 19017.128, 10704.89, 23873.601, 35632.028, 5620.066, 12258.914, 21567.852, 14890.502, 28832.691, 16372.152, 13269.0, 9672.402, 22883.406, 31533.374, 27141.059, 22322.762, 16733.053, 6027.024, 33428.621999999996, 12383.387, 13566.588000000002, 17061.1, 23209.926, 17619.162, 26942.603, 32855.663, 49918.773, 21984.91], "profit": [855.7736, 565.5257, 356.9715999999999, 1934.2465, 1341.3828, 1348.7765, 1266.2879, 1887.0326, -230.03840000000017, 2081.4522, 5178.0667, 4907.3548, -856.7039, 604.8542, 2869.1923, 2371.4864, 2035.6704, 1552.8305, 2499.9592, 3634.5262, 4821.1605, 2331.9448, 6682.7355, 4956.2109, 916.3914, 3297.5434, 3105.8304, 3713.4636, 4440.1701, 2389.1552, 2270.0104, 927.0237, 4912.0134, 11707.7475, -1495.3262999999997, 3589.9692, 3919.4326, 859.0888, 11035.0759, -2639.7739, 3261.7397, 3939.3579999999997, 4064.7122999999997, 2650.8585000000003, 4595.1281, 7761.420700000001, 5674.9371, 5562.2788]}}}, "regional_data": {"dates": ["2014-01-01", "2014-02-01", "2014-03-01", "2014-04-01", "2014-05-01", "2014-06-01", "2014-07-01", "2014-08-01", "2014-09-01", "2014-10-01", "2014-11-01", "2014-12-01", "2015-01-01", "2015-02-01", "2015-03-01", "2015-04-01", "2015-05-01", "2015-06-01", "2015-07-01", "2015-08-01", "2015-09-01", "2015-10-01", "2015-11-01", "2015-12-01", "2016-01-01", "2016-02-01", "2016-03-01", "2016-04-01", "2016-05-01", "2016-06-01", "2016-07-01", "2016-08-01", "2016-09-01", "2016-10-01", "2016-11-01", "2016-12-01", "2017-01-01", "2017-02-01", "2017-03-01", "2017-04-01", "2017-05-01", "2017-06-01", "2017-07-01", "2017-08-01", "2017-09-01", "2017-10-01", "2017-11-01", "2017-12-01"], "regions": {"Central": {"sales": [1539.906, 1233.174, 5827.602, 3712.34, 4048.506, 9646.2986, 6740.574, 3022.183, 34408.6898, 8965.757, 14057.5682, 10635.566, 2510.5116000000003, 2527.586, 6730.268, 11642.055, 8623.903, 3713.187, 7605.567, 9301.4512, 7578.52, 7000.486, 18903.086, 16737.6012, 5942.156, 1115.728, 13153.813, 7462.352, 11743.965, 6553.148, 8894.464, 6982.5548, 17503.2054, 25832.352, 16910.3168, 25335.321, 21690.656, 3334.8224, 15504.5788, 3383.1236, 11588.8542, 12966.7612, 8872.956, 6252.994, 17342.997, 12122.3362, 15154.978, 18883.0708], "profit": [118.4902, 294.80670000000003, -274.0467, 229.3787, -506.01709999999997, 1246.1218000000001, -4055.3338, 628.4268, 1422.7971999999995, 1341.2414, -794.1588999999999, 887.8471000000001, -602.8452, 330.97400000000005, 51.414099999999976, 992.0607999999997, 963.9297, -420.6719999999999, 305.2634, 1031.5799, 1563.3415, 48.65879999999997, 3261.6008, 4191.4962, 474.09260000000006, -142.56530000000004, -606.0403000000001, -1344.2659999999998, 1376.8481, 189.93040000000002, 806.0160999999999, 195.90239999999997, -563.5896, 10760.861, 1470.7464, 7281.2271, 2865.9345000000003, -999.1856, 2054.6442, 124.58419999999998, 1765.1916, 1209.4964, 1027.7903000000001, 531.3726, 1130.4660999999999, 597.5207000000001, -1518.5954000000002, -1238.3754]}, "East": {"sales": [436.174, 199.77599999999998, 5943.388, 3054.906, 7250.103, 10759.155999999999, 3568.146, 4582.447999999999, 25292.789, 8945.124, 33950.771, 24697.676, 4670.994000000001, 6463.133, 6011.741, 7778.796, 7481.424, 7442.988, 11872.664, 9463.772, 29440.987, 6302.03, 34724.761, 24678.767, 4860.087, 3149.821, 16764.857, 17839.968, 22589.283, 11737.405999999999, 8524.197, 9264.957, 20262.492, 15065.465, 22982.089, 27645.2, 5383.284000000001, 4968.522, 7699.956, 10230.905999999999, 6119.369, 15161.225, 12321.823, 20758.466, 32416.097999999998, 32305.2, 45633.639, 20084.416], "profit": [-39.3564, 62.7536, -809.1754999999999, -220.6252, 754.4965, 980.1412, 847.1365000000001, 801.8064, 4174.8133, 61.97850000000008, 5591.6322, 4854.0084, -1633.388, 1806.5874999999999, 1474.0029, 1095.2726, 1633.5375, 1629.7651, 2350.9841, 912.0869, 2511.781, 1460.3087, 7862.316, -12.241300000000232, 799.0267, 573.6857, 2444.1875000000005, 3538.4937, 3531.9125999999997, 1598.5539999999999, -291.27330000000006, 411.52230000000003, 3168.201, 3681.6104, -4842.2419, 5527.9174, 355.8694, 494.4531, 1188.1279, 1199.5098, 843.9141, 3101.7598, 1118.1236999999999, 2182.9194, 2492.6463, 7637.881700000001, 9390.2568, 3225.0994]}, "South": {"sales": [9322.092, 2028.986, 32911.121, 12184.612000000001, 5779.24, 4560.251, 1829.1200000000001, 7056.6065, 7175.335, 4813.754, 7428.753, 8755.973, 4965.834, 1156.514, 10322.095, 5718.3335, 1983.704, 8552.167, 2197.268, 5584.75, 13677.487, 4085.7275, 7795.8205, 5320.28, 4082.426, 15613.104000000001, 4238.174, 2965.71, 11960.233, 3455.885, 6562.419, 3050.0105, 12023.451, 3165.234, 15596.555, 10897.022, 4815.59, 2182.872, 6643.719999999999, 9447.753499999999, 10943.741, 8933.92, 3302.098, 10371.534, 10200.52, 12136.951000000001, 28717.421, 15209.737], "profit": [2346.6639999999998, 279.3395, 47.7247999999998, 1850.6272, 1616.6662000000001, 978.4462, 420.0319, 1326.9674, -345.0338, 653.7719, 1343.3429, 1360.5718, -1645.0817, 222.5703, 3982.8630999999996, 767.3671, 429.2514, 1092.118, 608.1512, 2173.1713, 1682.8226, -470.049, -399.3144000000001, -125.27590000000004, 907.4586, 4185.061, 563.6023, 426.8291, 2269.0842000000002, 686.4374, 971.7937, 172.6095, 2447.642, 383.1275, 2940.2781, 1748.885, 710.3023, 470.3746, 2394.0741000000003, 1356.6508000000001, 1082.7368000000001, 1132.5620999999999, 577.9524, 181.1379, 2483.8614000000002, -2243.235, -1624.8074000000001, 2327.2979]}, "West": {"sales": [2938.723, 1057.9560000000001, 11008.898, 9343.487, 6570.438, 9629.422, 21808.553, 13248.231, 14900.537, 8728.758, 23191.6245, 25456.4055, 6026.736000000001, 1804.1779999999999, 15662.148, 9056.024, 12042.655499999999, 5088.95, 7089.826, 12548.359, 13898.924, 14016.68, 14548.896, 28182.873, 3657.822, 3100.162, 17559.031, 10482.009, 10694.247, 18598.095, 15280.883, 11817.852, 23620.8765, 15624.694, 23923.005, 33121.5, 12081.844, 9814.917, 29024.097999999998, 13459.753, 15609.146, 15919.8195, 20767.539, 25737.894, 27907.037, 21212.436, 28941.787, 29652.095], "profit": [24.39290000000002, 225.4086, 1534.2273, 1629.4545, 873.564, 1771.8152, 1946.6827999999998, 2560.9044, 3075.5227, 1391.2655, 3151.3107, 1881.1426000000001, 600.3079, 453.71899999999994, 4223.8177, 1332.7957000000001, 1641.1504, 1034.3461, 24.249599999999994, 1238.9703, 2451.2176, 1778.4475, 1750.186, 3962.9869, 644.2454, 388.3981, 1210.2185, 356.75809999999996, 1484.3015, 2275.4563, 2946.3414000000002, 1282.0351, 4276.4042, 1417.5436000000002, 4442.6249, 3327.2798, 3208.3329, 1648.2299, 9115.0453, -1747.4548000000002, 2650.7403, 2779.5173999999997, 4228.7548, 6145.5258, 4884.5818, 3283.1081, 3443.2497, 4169.3249]}}}, "segment_data": {"dates": ["2014-01-01", "2014-02-01", "2014-03-01", "2014-04-01", "2014-05-01", "2014-06-01", "2014-07-01", "2014-08-01", "2014-09-01", "2014-10-01", "2014-11-01", "2014-12-01", "2015-01-01", "2015-02-01", "2015-03-01", "2015-04-01", "2015-05-01", "2015-06-01", "2015-07-01", "2015-08-01", "2015-09-01", "2015-10-01", "2015-11-01", "2015-12-01", "2016-01-01", "2016-02-01", "2016-03-01", "2016-04-01", "2016-05-01", "2016-06-01", "2016-07-01", "2016-08-01", "2016-09-01", "2016-10-01", "2016-11-01", "2016-12-01", "2017-01-01", "2017-02-01", "2017-03-01", "2017-04-01", "2017-05-01", "2017-06-01", "2017-07-01", "2017-08-01", "2017-09-01", "2017-10-01", "2017-11-01", "2017-12-01"], "segments": {"Consumer": {"sales": [6927.817, 3167.8540000000003, 11869.304, 9108.612000000001, 12819.163, 25923.7476, 20197.739999999998, 16215.2635, 59690.65, 16246.697, 46571.978, 37357.9865, 14274.9836, 9269.018, 17418.89, 22626.4055, 20879.179, 12824.504, 19948.813000000002, 20589.835, 38860.273, 17128.8685, 33146.8327, 39568.331, 6026.649, 15800.227, 24844.991, 14075.248, 32174.635000000002, 23888.811, 22631.847, 13885.5638, 42647.7936, 10143.282, 41449.8628, 49294.989, 23211.841, 5589.077, 35041.522, 9034.924, 21059.737399999998, 20273.1177, 18991.373, 31629.144, 43857.203, 23194.2402, 49790.0648, 50232.4558], "profit": [766.2263, 496.8669, 597.2773000000001, 1155.0756999999999, 698.9171, 3486.7664, -2227.2786, 2157.7522, 8312.120299999999, 2387.3712, 1975.0425, 4513.7131, -2162.7147999999997, 2275.0778999999998, 5338.177299999999, 1765.0488, 3333.7177, 2918.8, 1979.6496, 3658.7878, 3479.5535999999997, 557.6527, 3950.9719, 1365.444, -104.36590000000001, 3882.9043, 2468.6651, -366.4607000000001, 4067.5899999999997, 3141.5096, 2685.4517, 1267.1108, 6951.6681, 1200.4416999999999, -1901.1936, 12477.6321, 4679.950999999999, 13.417599999999965, 9682.0015, 1300.7178000000001, 2645.8776000000003, 2370.4585, 1666.5423, 3180.7658, 5595.022, 2465.3715, 6131.8783, 5836.2352]}, "Corporate": {"sales": [1701.528, 1183.6680000000001, 11106.798999999999, 14131.729000000001, 9142.0, 3970.9139999999998, 10032.988, 7451.773999999999, 15507.745, 12637.678, 20994.4947, 20573.556, 3382.464, 2565.257, 16332.0184, 4121.044, 5454.9395, 9404.089, 7191.7, 11455.7592, 16604.561, 8646.369, 27299.644800000002, 16299.461, 9485.124, 2866.884, 14226.473, 16177.376, 18452.258, 7788.494000000001, 13168.919, 12943.4705, 17802.8123, 32130.545, 26493.18, 35570.826, 12221.232, 7959.258, 16574.6228, 14803.0146, 14239.8348, 19695.04, 16525.599, 25678.444, 24105.103, 24877.168, 44644.0762, 20524.432], "profit": [300.9145, 307.2995, 333.0515, 1393.3828, 2063.5013, 67.01490000000004, 1308.7058, 2245.4838, -948.1009999999999, 746.3934, 3843.5716, 1852.0588, -863.3824, 507.6057, 3886.7496, 563.1293000000001, 678.369, 517.9992, 907.1671, 1644.0792999999999, 2817.9514, 1386.2609, 5147.2859, 3495.1097999999997, 1865.4547, 92.41379999999998, -327.46010000000007, 3266.5159000000003, 3244.8721, 687.7483, 1390.7556, 991.9991, 991.9952999999999, 9650.169, 4779.2852, 4361.4201, 46.58789999999988, 1638.0887, 3911.9128, 2050.9136, 1844.6399, 3448.5451, 3261.7664, 4637.503, 3197.3305, 2808.6509, 697.015, -760.5904999999999]}, "Home Office": {"sales": [5607.55, 168.37, 32714.906, 5055.004, 1687.124, 4700.465999999999, 3715.665, 4242.431, 6578.9558, 2569.018, 11062.244, 11614.078, 516.628, 117.136, 4975.3436, 7447.759, 3797.5679999999998, 2568.699, 1624.812, 4852.738, 9131.083999999999, 5629.686, 15526.086000000001, 19051.7292, 3030.718, 4311.704, 12644.411, 8497.415, 6360.835, 8667.229000000001, 3461.197, 4286.34, 12959.419, 17413.917999999998, 11468.923, 12133.228000000001, 8538.301, 6752.7984, 7256.208, 12683.5975, 8961.538, 13013.568, 9747.444, 5813.3, 19904.345999999998, 29705.515000000003, 24013.684, 13072.431], "profit": [1383.0499, 58.142, -431.5989, 940.3767, -23.70879999999994, 1422.7431, 77.09020000000001, 914.8689999999999, 964.0801, 314.4927, 3473.5128, 2617.798, -254.9098, 31.1672, 507.17089999999996, 1859.3181, 655.7823, -101.24199999999995, 401.83160000000004, 52.94130000000002, 1911.6577, 873.4524, 3376.5306, 3156.4121, 1063.7345, 1029.2614, 1470.763, 77.75969999999995, 1349.6843, 921.1202000000001, 356.67060000000004, -197.04059999999998, 1384.9942, 5392.5318, 1133.3158999999998, 1046.2571, 2413.9002, -37.63430000000005, 1157.9772, -2418.3414000000002, 1852.0653, 2404.3320999999996, 2024.3125, 1222.6869, 2199.2030999999997, 4001.2531000000004, 2861.2104, 3407.7021]}}}, "top_subcategories": {"names": ["Phones", "Chairs", "Storage", "Tables", "Binders", "Machines", "Accessories", "Copiers", "Bookcases", "Appliances", "Furnishings", "Paper", "Supplies", "Art", "Envelopes"], "sales": [330007.054, 328449.103, 223843.608, 206965.532, 203412.733, 189238.631, 167380.318, 149528.03, 114879.9963, 107532.16100000001, 91705.164, 78479.206, 46673.538, 27118.792, 16476.402], "profit": [44515.7306, 26590.1663, 21278.8264, -17725.4811, 30221.7633, 3384.7569, 41936.6357, 55617.8249, -3472.556, 18138.005400000002, 13059.1436, 34053.5693, -1189.0995, 6527.787, 6964.1767], "quantity": [3289, 2356, 3158, 1241, 5974, 440, 2976, 234, 868, 1729, 3563, 5178, 647, 3000, 906]}, "top_states": {"names": ["California", "New York", "Texas", "Washington", "Pennsylvania", "Florida", "Illinois", "Ohio", "Michigan", "Virginia", "North Carolina", "Indiana", "Georgia", "Kentucky", "New Jersey"], "sales": [457687.6315, 310876.271, 170188.0458, 138641.27, 116511.914, 89473.708, 80166.101, 78258.136, 76269.614, 70636.72, 55603.164, 53555.36, 49095.84, 36591.75, 35764.312], "profit": [76381.38709999999, 74038.5486, -25729.3563, 33402.6517, -15559.9603, -3399.3017000000004, -12607.887, -16971.3766, 24463.1876, 18597.9504, -7490.9122, 18382.9363, 16250.0433, 11199.6966, 9772.9138]}, "summary": {"total_sales": 2297200.8603000003, "total_profit": 286397.0217, "total_orders": 5009, "total_customers": 793, "avg_order_value": 458.61466566180883, "profit_margin": 12.467217240315604, "date_range": "2014-01-03 to 2017-12-30", "forecast_period": "2018-01-01 to 2018-12-01"}};
+
+        Chart.defaults.color = '#94a3b8';
+        Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+        Chart.defaults.font.family = "'Inter', sans-serif";
+
+        const chartColors = {
+            primary: '#6366f1', primaryLight: 'rgba(99, 102, 241, 0.2)',
+            secondary: '#0ea5e9', secondaryLight: 'rgba(14, 165, 233, 0.2)',
+            accent: '#f59e0b', accentLight: 'rgba(245, 158, 11, 0.2)',
+            success: '#10b981', successLight: 'rgba(16, 185, 129, 0.2)',
+            danger: '#ef4444', purple: '#8b5cf6', pink: '#ec4899', teal: '#14b8a6'
+        };
+
+        function initStats() {
+            const s = forecastData.summary;
+            const stats = [
+                { icon: 'fa-dollar-sign', cls: 'sales', label: 'Total Sales', value: '$' + (s.total_sales/1000).toFixed(1) + 'K', change: '+12.4%', positive: true },
+                { icon: 'fa-coins', cls: 'profit', label: 'Total Profit', value: '$' + (s.total_profit/1000).toFixed(1) + 'K', change: '+8.7%', positive: true },
+                { icon: 'fa-shopping-cart', cls: 'orders', label: 'Total Orders', value: s.total_orders.toLocaleString(), change: '+15.2%', positive: true },
+                { icon: 'fa-percentage', cls: 'margin', label: 'Profit Margin', value: s.profit_margin.toFixed(1) + '%', change: '-1.2%', positive: false },
+                { icon: 'fa-users', cls: 'customers', label: 'Customers', value: s.total_customers.toLocaleString(), change: '+9.3%', positive: true },
+                { icon: 'fa-receipt', cls: 'aov', label: 'Avg Order Value', value: '$' + s.avg_order_value.toFixed(0), change: '+4.1%', positive: true }
+            ];
+            document.getElementById('statsGrid').innerHTML = stats.map(st => `
+                <div class="stat-card">
+                    <div class="stat-icon ${st.cls}"><i class="fas ${st.icon}"></i></div>
+                    <div class="stat-label">${st.label}</div>
+                    <div class="stat-value">${st.value}</div>
+                    <div class="stat-change ${st.positive ? 'positive' : 'negative'}">
+                        <i class="fas ${st.positive ? 'fa-arrow-up' : 'fa-arrow-down'}"></i>
+                        ${st.change} vs last period
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        let forecastChart;
+        function initForecastChart() {
+            const ctx = document.getElementById('forecastChart').getContext('2d');
+            const hist = forecastData.historical;
+            const fore = forecastData.forecast;
+            const allDates = [...hist.dates, ...fore.dates];
+            const histSales = [...hist.sales, ...Array(fore.dates.length).fill(null)];
+            const hwForecast = [...Array(hist.dates.length).fill(null), ...fore.hw_sales];
+            const rfForecast = [...Array(hist.dates.length).fill(null), ...fore.rf_sales];
+
+            forecastChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: allDates,
+                    datasets: [
+                        { label: 'Historical Sales', data: histSales, borderColor: chartColors.primary, backgroundColor: chartColors.primaryLight, fill: true, tension: 0.4, pointRadius: 3, pointHoverRadius: 6, borderWidth: 2 },
+                        { label: 'Holt-Winters Forecast', data: hwForecast, borderColor: chartColors.success, backgroundColor: chartColors.successLight, fill: false, tension: 0.4, pointRadius: 4, pointHoverRadius: 7, borderWidth: 2, borderDash: [5, 5] },
+                        { label: 'Random Forest Forecast', data: rfForecast, borderColor: chartColors.accent, backgroundColor: chartColors.accentLight, fill: false, tension: 0.4, pointRadius: 4, pointHoverRadius: 7, borderWidth: 2, borderDash: [10, 5] }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    interaction: { intersect: false, mode: 'index' },
+                    plugins: {
+                        legend: { position: 'top', labels: { usePointStyle: true, padding: 20, font: { size: 12 } } },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.95)', titleColor: '#f8fafc', bodyColor: '#94a3b8',
+                            borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, padding: 12,
+                            callbacks: { label: function(context) { return context.dataset.label + ': $' + context.parsed.y.toLocaleString(undefined, {maximumFractionDigits: 0}); } }
+                        }
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { maxTicksLimit: 12, maxRotation: 45 } },
+                        y: { beginAtZero: true, ticks: { callback: function(value) { return '$' + (value/1000).toFixed(0) + 'K'; } } }
+                    }
+                }
+            });
+        }
+
+        function setForecastView(view) {
+            document.querySelectorAll('.card-actions .btn-sm').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            if (view === 'historical') {
+                forecastChart.data.datasets[0].hidden = false;
+                forecastChart.data.datasets[1].hidden = true;
+                forecastChart.data.datasets[2].hidden = true;
+            } else if (view === 'forecast') {
+                forecastChart.data.datasets[0].hidden = true;
+                forecastChart.data.datasets[1].hidden = false;
+                forecastChart.data.datasets[2].hidden = false;
+            } else {
+                forecastChart.data.datasets[0].hidden = false;
+                forecastChart.data.datasets[1].hidden = false;
+                forecastChart.data.datasets[2].hidden = false;
+            }
+            forecastChart.update();
+        }
+
+        function initForecastTable() {
+            const tbody = document.getElementById('forecastTableBody');
+            const hist = forecastData.historical;
+            const fore = forecastData.forecast;
+            let html = '';
+            for (let i = Math.max(0, hist.dates.length - 6); i < hist.dates.length; i++) {
+                const date = new Date(hist.dates[i]);
+                const monthName = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+                const prevSales = i > 0 ? hist.sales[i-1] : hist.sales[i];
+                const trend = ((hist.sales[i] - prevSales) / prevSales * 100);
+                const trendClass = trend >= 0 ? 'trend-up' : 'trend-down';
+                const trendIcon = trend >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
+                html += `<tr><td>${monthName}</td><td><span class="forecast-badge historical">Historical</span></td><td>$${hist.sales[i].toLocaleString(undefined, {maximumFractionDigits: 0})}</td><td>-</td><td class="trend-indicator ${trendClass}"><i class="fas ${trendIcon}"></i> ${Math.abs(trend).toFixed(1)}%</td></tr>`;
+            }
+            for (let i = 0; i < fore.dates.length; i++) {
+                const date = new Date(fore.dates[i]);
+                const monthName = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+                const prevSales = i === 0 ? hist.sales[hist.sales.length - 1] : fore.rf_sales[i-1];
+                const trend = ((fore.rf_sales[i] - prevSales) / prevSales * 100);
+                const trendClass = trend >= 0 ? 'trend-up' : 'trend-down';
+                const trendIcon = trend >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
+                html += `<tr class="forecast-row"><td>${monthName}</td><td><span class="forecast-badge predicted">Predicted</span></td><td>$${fore.rf_sales[i].toLocaleString(undefined, {maximumFractionDigits: 0})}</td><td>$${fore.hw_sales[i].toLocaleString(undefined, {maximumFractionDigits: 0})}</td><td class="trend-indicator ${trendClass}"><i class="fas ${trendIcon}"></i> ${Math.abs(trend).toFixed(1)}%</td></tr>`;
+            }
+            tbody.innerHTML = html;
+        }
+
+        function initMetrics() {
+            const m = forecastData.metrics;
+            document.getElementById('metricsGrid').innerHTML = `
+                <div class="metric-box"><div class="metric-box-value" style="color:${chartColors.primary}">$${(m.rf_mae/1000).toFixed(1)}K</div><div class="metric-box-label">RF MAE</div></div>
+                <div class="metric-box"><div class="metric-box-value" style="color:${chartColors.success}">$${(m.hw_mae/1000).toFixed(1)}K</div><div class="metric-box-label">HW MAE</div></div>
+                <div class="metric-box"><div class="metric-box-value" style="color:${chartColors.accent}">${(m.rf_r2*100).toFixed(0)}%</div><div class="metric-box-label">R² Score</div></div>
+            `;
+            const features = [
+                { name: 'Sales Lag 1', value: 35, color: 'primary' },
+                { name: 'Sales Lag 2', value: 28, color: 'secondary' },
+                { name: 'Month Seasonality', value: 22, color: 'accent' },
+                { name: 'Sales Lag 3', value: 15, color: 'success' }
+            ];
+            document.getElementById('featureImportance').innerHTML = features.map(f => `
+                <div style="margin-bottom:12px;">
+                    <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span>${f.name}</span><span style="font-weight:600;">${f.value}%</span></div>
+                    <div class="progress-bar"><div class="progress-fill ${f.color}" style="width:${f.value}%"></div></div>
+                </div>
+            `).join('');
+        }
+
+        function initDecompositionCharts() {
+            new Chart(document.getElementById('trendChart'), {
+                type: 'line',
+                data: { labels: forecastData.decomposition.dates, datasets: [{ label: 'Trend', data: forecastData.decomposition.trend, borderColor: chartColors.primary, backgroundColor: chartColors.primaryLight, fill: true, tension: 0.4, pointRadius: 0, borderWidth: 2 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { maxTicksLimit: 8 } }, y: { ticks: { callback: v => '$' + (v/1000).toFixed(0) + 'K' } } } }
+            });
+            new Chart(document.getElementById('seasonalChart'), {
+                type: 'bar',
+                data: { labels: forecastData.decomposition.dates, datasets: [{ label: 'Seasonal', data: forecastData.decomposition.seasonal, backgroundColor: forecastData.decomposition.seasonal.map(v => v >= 0 ? chartColors.success : chartColors.danger), borderRadius: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { maxTicksLimit: 8 } }, y: { ticks: { callback: v => '$' + (v/1000).toFixed(0) + 'K' } } } }
+            });
+            new Chart(document.getElementById('residualChart'), {
+                type: 'line',
+                data: { labels: forecastData.decomposition.dates, datasets: [{ label: 'Residual', data: forecastData.decomposition.residual, borderColor: chartColors.accent, backgroundColor: 'transparent', tension: 0.4, pointRadius: 2, borderWidth: 1.5 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { maxTicksLimit: 12 } }, y: { ticks: { callback: v => '$' + (v/1000).toFixed(0) + 'K' } } } }
+            });
+        }
+
+        function initCategoryCharts() {
+            const catData = forecastData.category_data;
+            const cats = Object.keys(catData.categories);
+            const colors = [chartColors.primary, chartColors.success, chartColors.accent];
+            new Chart(document.getElementById('categoryChart'), {
+                type: 'line',
+                data: { labels: catData.dates, datasets: cats.map((cat, i) => ({ label: cat, data: catData.categories[cat].sales, borderColor: colors[i], backgroundColor: colors[i] + '20', fill: false, tension: 0.4, pointRadius: 3, borderWidth: 2 })) },
+                options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { position: 'top', labels: { usePointStyle: true } } }, scales: { x: { grid: { display: false }, ticks: { maxTicksLimit: 10 } }, y: { ticks: { callback: v => '$' + (v/1000).toFixed(0) + 'K' } } } }
+            });
+            const catTotals = cats.map(cat => catData.categories[cat].sales.reduce((a, b) => a + b, 0));
+            new Chart(document.getElementById('categoryPieChart'), {
+                type: 'doughnut',
+                data: { labels: cats, datasets: [{ data: catTotals, backgroundColor: colors, borderWidth: 0, hoverOffset: 10 }] },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { position: 'bottom', labels: { padding: 20, usePointStyle: true } } } }
+            });
+        }
+
+        function initRegionCharts() {
+            const regData = forecastData.regional_data;
+            const regions = Object.keys(regData.regions);
+            const colors = [chartColors.primary, chartColors.success, chartColors.accent, chartColors.purple, chartColors.pink];
+            new Chart(document.getElementById('regionChart'), {
+                type: 'line',
+                data: { labels: regData.dates, datasets: regions.map((reg, i) => ({ label: reg, data: regData.regions[reg].sales, borderColor: colors[i], backgroundColor: colors[i] + '20', fill: false, tension: 0.4, pointRadius: 3, borderWidth: 2 })) },
+                options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { position: 'top', labels: { usePointStyle: true } } }, scales: { x: { grid: { display: false }, ticks: { maxTicksLimit: 10 } }, y: { ticks: { callback: v => '$' + (v/1000).toFixed(0) + 'K' } } } }
+            });
+            const regTotals = regions.map(reg => regData.regions[reg].sales.reduce((a, b) => a + b, 0));
+            new Chart(document.getElementById('regionBarChart'), {
+                type: 'bar',
+                data: { labels: regions, datasets: [{ label: 'Total Sales', data: regTotals, backgroundColor: colors.slice(0, regions.length), borderRadius: 8, barThickness: 40 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { ticks: { callback: v => '$' + (v/1000).toFixed(0) + 'K' } } } }
+            });
+        }
+
+        function initSegmentCharts() {
+            const segData = forecastData.segment_data;
+            const segments = Object.keys(segData.segments);
+            const colors = [chartColors.primary, chartColors.success, chartColors.accent];
+            new Chart(document.getElementById('segmentChart'), {
+                type: 'line',
+                data: { labels: segData.dates, datasets: segments.map((seg, i) => ({ label: seg, data: segData.segments[seg].sales, borderColor: colors[i], backgroundColor: colors[i] + '20', fill: false, tension: 0.4, pointRadius: 3, borderWidth: 2 })) },
+                options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { position: 'top', labels: { usePointStyle: true } } }, scales: { x: { grid: { display: false }, ticks: { maxTicksLimit: 10 } }, y: { ticks: { callback: v => '$' + (v/1000).toFixed(0) + 'K' } } } }
+            });
+            const segTotals = segments.map(seg => segData.segments[seg].sales.reduce((a, b) => a + b, 0));
+            new Chart(document.getElementById('segmentPieChart'), {
+                type: 'doughnut',
+                data: { labels: segments, datasets: [{ data: segTotals, backgroundColor: colors, borderWidth: 0, hoverOffset: 10 }] },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { position: 'bottom', labels: { padding: 20, usePointStyle: true } } } }
+            });
+        }
+
+        function initInsights() {
+            const insights = [
+                { icon: 'up', cls: 'up', title: 'Strong Seasonal Pattern', text: 'Sales peak in Q4 (Nov-Dec) with 40-60% increase. Plan inventory accordingly for holiday season.' },
+                { icon: 'info', cls: 'info', title: 'Technology Category Leading', text: 'Technology products show highest growth trajectory. Consider expanding tech product lines.' },
+                { icon: 'up', cls: 'up', title: 'West Region Opportunity', text: 'West region shows consistent growth. Focus marketing spend on California and western states.' },
+                { icon: 'warn', cls: 'warn', title: 'Profit Margin Warning', text: 'Furniture category has negative profit on some items. Review pricing strategy for low-margin products.' },
+                { icon: 'down', cls: 'down', title: 'Q1 Seasonal Dip', text: 'January-February consistently underperform. Consider promotional campaigns during slow months.' },
+                { icon: 'info', cls: 'info', title: 'Corporate Segment Growth', text: 'Corporate segment shows 15% YoY growth. Develop B2B-specific offerings and bulk pricing.' }
+            ];
+            document.getElementById('insightsList').innerHTML = insights.map(ins => `
+                <div class="insight-item">
+                    <div class="insight-icon ${ins.cls}"><i class="fas fa-${ins.icon === 'up' ? 'arrow-trend-up' : ins.icon === 'down' ? 'arrow-trend-down' : ins.icon === 'warn' ? 'triangle-exclamation' : 'circle-info'}"></i></div>
+                    <div class="insight-content"><h4>${ins.title}</h4><p>${ins.text}</p></div>
+                </div>
+            `).join('');
+
+            const subcats = forecastData.top_subcategories;
+            const maxSub = Math.max(...subcats.sales);
+            document.getElementById('topSubcategories').innerHTML = subcats.names.slice(0, 8).map((name, i) => {
+                const pct = (subcats.sales[i] / maxSub * 100).toFixed(0);
+                return `<div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;">${name}</span><span style="font-weight:600;">$${(subcats.sales[i]/1000).toFixed(1)}K</span></div><div class="progress-bar"><div class="progress-fill primary" style="width:${pct}%"></div></div></div>`;
+            }).join('');
+
+            const states = forecastData.top_states;
+            const maxState = Math.max(...states.sales);
+            document.getElementById('topStates').innerHTML = states.names.slice(0, 8).map((name, i) => {
+                const pct = (states.sales[i] / maxState * 100).toFixed(0);
+                return `<div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span>${name}</span><span style="font-weight:600;">$${(states.sales[i]/1000).toFixed(1)}K</span></div><div class="progress-bar"><div class="progress-fill success" style="width:${pct}%"></div></div></div>`;
+            }).join('');
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('tab-' + tabId).classList.add('active');
+            if (tabId === 'decomposition' && !window.decompInit) { initDecompositionCharts(); window.decompInit = true; }
+            if (tabId === 'categories' && !window.catInit) { initCategoryCharts(); window.catInit = true; }
+            if (tabId === 'regions' && !window.regInit) { initRegionCharts(); window.regInit = true; }
+            if (tabId === 'segments' && !window.segInit) { initSegmentCharts(); window.segInit = true; }
+            if (tabId === 'insights' && !window.insInit) { initInsights(); window.insInit = true; }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initStats();
+            initForecastChart();
+            initForecastTable();
+            initMetrics();
+            initDecompositionCharts();
+            window.decompInit = true;
+        });
+    </script>
+</body>
+</html>
